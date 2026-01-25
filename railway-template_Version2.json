@@ -1,0 +1,173 @@
+{
+  "name": "Trust Graph - Relationship Intelligence Platform",
+  "description": "Production-grade relationship intelligence platform for founders. Track trust scores, get AI-powered call timing, and never miss a hot lead.",
+  "repository": "https://github.com/yourusername/trust-graph",
+  "keywords": [
+    "crm",
+    "ai",
+    "neo4j",
+    "fastapi",
+    "founders",
+    "sales",
+    "networking"
+  ],
+  "services": [
+    {
+      "name": "api",
+      "serviceName": "Trust Graph API",
+      "description": "Main FastAPI backend with REST endpoints",
+      "icon": "https://api.trustgraph.io/icon.png",
+      "source": {
+        "type": "dockerfile",
+        "dockerfilePath": "./Dockerfile"
+      },
+      "domains": [
+        {
+          "name": "api"
+        }
+      ],
+      "env": {
+        "PORT": {
+          "description": "Port for the API server",
+          "default": "8000",
+          "required": true
+        },
+        "NEO4J_URI": {
+          "description": "Neo4j connection URI (use neo4j+s:// or bolt+s:// for Aura)",
+          "required": true,
+          "reference": "neo4j.connectionUri"
+        },
+        "NEO4J_USER": {
+          "description": "Neo4j username",
+          "default": "neo4j",
+          "required": true
+        },
+        "NEO4J_PASSWORD": {
+          "description": "Neo4j password (set as a Railway secret)",
+          "required": true,
+          "reference": "neo4j.password"
+        },
+        "REDIS_URL": {
+          "description": "Redis connection URL (set as a Railway secret or service reference)",
+          "required": true,
+          "reference": "redis.connectionUrl"
+        },
+        "ALLOWED_ORIGINS": {
+          "description": "CORS allowed origins (comma-separated)",
+          "default": "",
+          "required": false
+        },
+        "SLACK_BOT_TOKEN": {
+          "description": "Slack bot token (optional)",
+          "required": false
+        },
+        "SLACK_APP_TOKEN": {
+          "description": "Slack app token for socket mode (optional)",
+          "required": false
+        },
+        "EMAIL_ACCOUNT": {
+          "description": "Email account for outcome parsing (optional)",
+          "required": false
+        },
+        "EMAIL_PASSWORD": {
+          "description": "Email password or app-specific password (optional)",
+          "required": false
+        }
+      },
+      "healthcheck": {
+        "path": "/health",
+        "timeout": 30
+      },
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    },
+    {
+      "name": "worker",
+      "serviceName": "Trust Graph Worker",
+      "description": "Celery background task processor",
+      "source": {
+        "type": "dockerfile",
+        "dockerfilePath": "./Dockerfile"
+      },
+      "env": {
+        "NEO4J_URI": {
+          "description": "Neo4j connection URI",
+          "required": true,
+          "reference": "neo4j.connectionUri"
+        },
+        "NEO4J_USER": {
+          "description": "Neo4j username",
+          "default": "neo4j",
+          "required": true
+        },
+        "NEO4J_PASSWORD": {
+          "description": "Neo4j password (set as Railway secret)",
+          "required": true,
+          "reference": "neo4j.password"
+        },
+        "REDIS_URL": {
+          "description": "Redis connection URL",
+          "required": true,
+          "reference": "redis.connectionUrl"
+        }
+      },
+      "startCommand": "celery -A worker.tasks worker --loglevel=info"
+    },
+    {
+      "name": "redis",
+      "serviceName": "Redis Cache",
+      "description": "Redis for caching and task queue",
+      "template": "redis",
+      "env": {}
+    },
+    {
+      "name": "init",
+      "serviceName": "Database Initializer",
+      "description": "One-time database initialization",
+      "source": {
+        "type": "dockerfile",
+        "dockerfilePath": "./Dockerfile"
+      },
+      "env": {
+        "NEO4J_URI": {
+          "description": "Neo4j connection URI",
+          "required": true,
+          "reference": "neo4j.connectionUri"
+        },
+        "NEO4J_USER": {
+          "description": "Neo4j username",
+          "default": "neo4j",
+          "required": true
+        },
+        "NEO4J_PASSWORD": {
+          "description": "Neo4j password (set as Railway secret)",
+          "required": true,
+          "reference": "neo4j.password"
+        }
+      },
+      "startCommand": "python init_db.py",
+      "restartPolicy": {
+        "type": "NEVER"
+      }
+    }
+  ],
+  "volumes": [],
+  "plugins": [],
+  "info": {
+    "readme": "# Trust Graph\n\nRelationship intelligence platform for founders.\n\n## Features\n\n- **Trust Scoring**: Dynamic scores with velocity tracking\n- **AI Timing Advisor**: Optimal call time recommendations\n- **Multi-Portfolio**: Manage fundraising, sales, hiring separately\n- **Slack Integration**: Daily briefings + outcome capture\n- **ML Predictions**: Deal probability forecasting\n\n## Quick Start\n\n1. Deploy completes in ~2 minutes\n2. Railway will provision Neo4j Aura automatically\n3. Access your API at the generated Railway URL\n4. View docs at: `https://your-app.up.railway.app/docs`\n\n## Post-Deploy\n\n1. **Add Neo4j Aura** (recommended):\n   - Go to neo4j.com/aura\n   - Create free tier instance\n   - Update NEO4J_URI in Railway variables\n\n2. **Initialize Database**:\n   - The init service runs automatically on first deploy\n   - Check logs to verify completion\n\n3. **Optional Integrations**:\n   - Set SLACK_BOT_TOKEN for Slack integration\n   - Set EMAIL_ACCOUNT for email parsing\n\n## Documentation\n\n- API Docs: `/docs`\n- Health Check: `/health`\n- Full Guide: See repository README\n\n## Support\n\nIssues: https://github.com/yourusername/trust-graph/issues"
+  },
+  "postDeploy": {
+    "message": "🎉 Trust Graph deployed! Initialize the database by checking the 'init' service logs. Then access your API at the provided URL.",
+    "actions": [
+      {
+        "type": "url",
+        "label": "View API Documentation",
+        "url": "https://${{api.url}}/docs"
+      },
+      {
+        "type": "url",
+        "label": "Check Health",
+        "url": "https://${{api.url}}/health"
+      }
+    ]
+  }
+}

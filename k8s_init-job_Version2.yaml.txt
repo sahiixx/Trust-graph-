@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: trust-graph-init
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      containers:
+        - name: init
+          image: yourregistry/trust-graph:latest
+          command: ["python", "init_db.py"]
+          env:
+            - name: NEO4J_URI
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-secret
+                  key: uri
+            - name: NEO4J_USER
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-secret
+                  key: user
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-secret
+                  key: password
+      restartPolicy: Never
